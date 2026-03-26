@@ -3,6 +3,6 @@
 <template>
     <div class="layout-footer">
         POS by
-        <a href="" target="_blank" rel="noopener noreferrer" class="text-primary font-bold hover:underline">Volfortuin</a>
+        <a href="" target="_blank" rel="noopener noreferrer" class="text-primary font-bold hover:underline">Gedang Krenyes</a>
     </div>
 </template>
