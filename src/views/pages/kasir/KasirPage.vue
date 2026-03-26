@@ -4,10 +4,8 @@ import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 import { computed, ref } from 'vue';
 
-/* === COMPONENTS PENDUKUNG === */
 import ShiftModal from './ShiftModal.vue';
 
-/* === PRIMEVUE === */
 import Button from 'primevue/button';
 import Divider from 'primevue/divider';
 import InputText from 'primevue/inputtext';
@@ -17,7 +15,6 @@ import Tag from 'primevue/tag';
 
 const toast = useToast();
 
-/* === STATE SHIFT === */
 const isShiftOpen = ref(false);
 const totalCashSales = ref(0);
 const shiftModalRef = ref(null);
@@ -38,7 +35,6 @@ const selectedCategory = ref('Semua');
 const query = ref('');
 const showCart = ref(false);
 
-/* === PAGINATION === */
 const currentPage = ref(0);
 const rowsPerPage = ref(8);
 
@@ -61,7 +57,6 @@ const onPageChange = (event) => {
     rowsPerPage.value = event.rows;
 };
 
-/* === KERANJANG === */
 const cart = ref([]);
 const discount = ref(0);
 const taxPercent = ref(10);
@@ -80,10 +75,19 @@ const addToCart = (p) => {
     }
     const exist = cart.value.find((i) => i.id === p.id);
     if (exist) {
-        if (exist.qty < p.stock) exist.qty++;
-        else toast.add({ severity: 'warn', summary: 'Stok Habis', detail: 'Tidak bisa menambah lagi.' });
+        if (exist.qty < p.stock) {
+            exist.qty++;
+        } else {
+            toast.add({ severity: 'warn', summary: 'Stok Habis', detail: 'Tidak bisa menambah lagi.' });
+            return;
+        }
     } else {
         cart.value.push({ id: p.id, name: p.name, qty: 1, price: p.price });
+    }
+
+    // Auto-buka cart sheet di mobile
+    if (window.innerWidth <= 768) {
+        showCart.value = true;
     }
 };
 
@@ -99,13 +103,11 @@ const removeFromCart = (id) => {
     cart.value = cart.value.filter((i) => i.id !== id);
 };
 
-/* === PERHITUNGAN === */
 const subtotal = computed(() => cart.value.reduce((s, i) => s + i.qty * i.price, 0));
 const tax = computed(() => Math.round((subtotal.value - discount.value) * (taxPercent.value / 100)));
 const total = computed(() => subtotal.value - discount.value + tax.value);
 const change = computed(() => Math.max(0, payment.value - total.value));
 
-/* === ACTION === */
 const clearCart = async () => {
     const c = await Swal.fire({ title: 'Batalkan transaksi?', icon: 'warning', showCancelButton: true });
     if (c.isConfirmed) {
@@ -127,7 +129,6 @@ const resetAfterPrint = () => {
     showCart.value = false;
 };
 
-/* === PRINT STRUK DI WINDOW BARU === */
 const printReceipt = (data) => {
     const itemRows = data.items
         .map(
@@ -168,21 +169,15 @@ const printReceipt = (data) => {
                 * { margin: 0; padding: 0; box-sizing: border-box; }
                 body { background: #fff; }
                 @page { size: 58mm auto; margin: 0; }
-                @media print {
-                    body { margin: 0; padding: 0; }
-                }
+                @media print { body { margin: 0; padding: 0; } }
             </style>
         </head>
         <body>
             <div style="width:58mm; font-family:'Courier New',Courier,monospace; font-size:8pt; color:#000; padding:4mm 3mm;">
-
-                <!-- Header -->
                 <div style="text-align:center; font-weight:bold; font-size:14pt; margin-bottom:2px;">GEDANG KRENYES</div>
                 <div style="text-align:center; font-size:7.5pt; margin-bottom:1px;">Jl. Ketintang Baru, Surabaya</div>
                 <div style="text-align:center; font-size:7.5pt; margin-bottom:6px;">Telp: 0812-3456-7890</div>
                 <div style="border-top:1px dashed #000; margin-bottom:6px;"></div>
-
-                <!-- Info Transaksi -->
                 <div style="display:flex; justify-content:space-between; font-size:7.5pt; margin-bottom:2px;">
                     <span style="min-width:65px;">No. Invoice</span><span>${data.invoiceNo}</span>
                 </div>
@@ -196,8 +191,6 @@ const printReceipt = (data) => {
                     <span style="min-width:65px;">Metode</span><span>${data.method}</span>
                 </div>
                 <div style="border-top:1px dashed #000; margin-bottom:6px;"></div>
-
-                <!-- Header Kolom Item -->
                 <div style="display:grid; grid-template-columns:2fr 0.5fr 1fr 1fr; gap:2px; font-size:7.5pt; font-weight:bold; margin-bottom:2px;">
                     <span>Item</span>
                     <span style="text-align:center;">Jml</span>
@@ -205,13 +198,8 @@ const printReceipt = (data) => {
                     <span style="text-align:right;">Total</span>
                 </div>
                 <div style="border-top:1px dashed #000; margin-bottom:4px;"></div>
-
-                <!-- Daftar Item -->
                 ${itemRows}
-
                 <div style="border-top:1px dashed #000; margin:4px 0 6px;"></div>
-
-                <!-- Summary -->
                 <div style="display:flex; justify-content:space-between; font-size:7.5pt; margin-bottom:2px;">
                     <span>Subtotal</span><span>Rp ${data.subtotal.toLocaleString('id-ID')}</span>
                 </div>
@@ -220,22 +208,14 @@ const printReceipt = (data) => {
                     <span>Pajak (10%)</span><span>Rp ${data.tax.toLocaleString('id-ID')}</span>
                 </div>
                 <div style="border-top:1px dashed #000; margin-bottom:6px;"></div>
-
-                <!-- Total -->
                 <div style="display:flex; justify-content:space-between; font-size:10pt; font-weight:bold; margin-bottom:4px;">
                     <span>TOTAL</span><span>Rp ${data.total.toLocaleString('id-ID')}</span>
                 </div>
-
-                <!-- Tunai / Non-Tunai -->
                 ${tunaiRows}
-
                 <div style="border-top:1px dashed #000; margin-bottom:6px;"></div>
-
-                <!-- Footer -->
                 <div style="text-align:center; font-size:7.5pt; margin-bottom:2px;">Terima kasih telah berbelanja!</div>
                 <div style="text-align:center; font-size:7.5pt; font-style:italic; margin-bottom:2px;">Semoga harimu menyenangkan</div>
                 <div style="text-align:center; font-size:7.5pt; font-weight:bold;">~ Gedang Krenyes ~</div>
-
             </div>
         </body>
         </html>
@@ -249,12 +229,10 @@ const printReceipt = (data) => {
     printWin.document.write(html);
     printWin.document.close();
     printWin.focus();
-    // Tunggu load lalu print
     printWin.onload = () => {
         printWin.print();
         printWin.close();
     };
-    // Fallback jika onload tidak trigger (beberapa browser)
     setTimeout(() => {
         try {
             printWin.print();
@@ -322,22 +300,25 @@ const processTransaction = async () => {
     <div class="pos-wrapper">
         <ShiftModal ref="shiftModalRef" v-model:isShiftOpen="isShiftOpen" :totalCashSales="totalCashSales" @shift-closed="resetShiftData" />
 
-        <!-- Mobile Header -->
+        <!-- ===== MOBILE HEADER (hanya tampil di mobile) ===== -->
         <header class="mobile-header surface-card">
             <div>
                 <div class="text-900 text-lg font-semibold">Kasir POS</div>
                 <div class="text-500 text-xs">Sistem Penjualan</div>
             </div>
-            <div style="display: flex; gap: 8px; align-items: center">
+            <div class="mobile-header-actions">
                 <Button v-if="isShiftOpen" icon="pi pi-power-off" severity="danger" outlined size="small" @click="shiftModalRef.triggerCloseModal()" />
+                <Button v-if="!isShiftOpen" icon="pi pi-play" severity="success" outlined size="small" @click="shiftModalRef.triggerOpenModal()" />
                 <Button icon="pi pi-shopping-cart" rounded class="cart-fab" @click="showCart = !showCart" :badge="cartCount > 0 ? String(cartCount) : undefined" badgeSeverity="danger" />
             </div>
         </header>
 
+        <!-- ===== MAIN LAYOUT ===== -->
         <div class="pos-layout">
-            <!-- Left Panel -->
+            <!-- ===== LEFT PANEL (produk) ===== -->
             <div class="left-panel">
-                <div class="surface-card card-box desktop-header" style="display: flex; justify-content: space-between; align-items: center">
+                <!-- Desktop-only header -->
+                <div class="surface-card card-box desktop-only" style="display: flex; justify-content: space-between; align-items: center">
                     <div>
                         <div class="text-900 text-xl font-semibold mb-1">Kasir POS</div>
                         <div class="text-600 text-sm">Sistem Penjualan (Point of Sale)</div>
@@ -345,6 +326,7 @@ const processTransaction = async () => {
                     <Button v-if="isShiftOpen" label="Tutup Shift" icon="pi pi-power-off" severity="danger" outlined @click="shiftModalRef.triggerCloseModal()" />
                 </div>
 
+                <!-- Search & Category -->
                 <div class="surface-card card-box">
                     <InputText v-model="query" placeholder="Cari produk..." class="w-full mb-3" @input="currentPage = 0" />
                     <div class="category-scroll">
@@ -364,18 +346,19 @@ const processTransaction = async () => {
                     </div>
                 </div>
 
+                <!-- Product Grid -->
                 <div class="surface-card card-box">
                     <div v-if="filteredProducts.length === 0" class="text-center text-500 py-4">Produk tidak ditemukan.</div>
                     <template v-else>
                         <div class="product-grid">
-                            <div v-for="p in paginatedProducts" :key="p.id" class="product-card" :style="!isShiftOpen ? 'opacity: 0.6; pointer-events: none;' : ''">
-                                <img :src="p.img" class="product-img" />
+                            <div v-for="p in paginatedProducts" :key="p.id" class="product-card" :class="{ 'product-disabled': !isShiftOpen }">
+                                <img :src="p.img" class="product-img" :alt="p.name" />
                                 <div class="product-info">
                                     <Tag :value="p.category" severity="info" class="w-fit" />
-                                    <div class="font-medium text-sm">{{ p.name }}</div>
+                                    <div class="font-medium text-sm mt-1">{{ p.name }}</div>
                                     <div class="text-primary font-bold text-sm">Rp {{ p.price.toLocaleString() }}</div>
                                     <small class="text-500">Stok: {{ p.stock }}</small>
-                                    <Button label="Tambah" icon="pi pi-plus" size="small" class="w-full mt-1" @click="addToCart(p)" :disabled="p.stock === 0 || !isShiftOpen" />
+                                    <Button label="Tambah" icon="pi pi-plus" size="small" class="w-full mt-2" @click="addToCart(p)" :disabled="p.stock === 0 || !isShiftOpen" />
                                 </div>
                             </div>
                         </div>
@@ -386,10 +369,15 @@ const processTransaction = async () => {
                 </div>
             </div>
 
-            <!-- Right Panel / Keranjang -->
-            <aside class="right-panel surface-card card-box desktop-cart" :style="!isShiftOpen ? 'opacity: 0.6; pointer-events: none;' : ''">
+            <!-- ===== RIGHT PANEL / CART (desktop only) ===== -->
+            <aside class="right-panel surface-card card-box desktop-only" :class="{ 'panel-disabled': !isShiftOpen }">
                 <h3 class="text-lg font-semibold mb-3">🛒 Keranjang</h3>
-                <div v-if="cart.length === 0" class="p-4 text-center text-500 surface-100 border-round">Keranjang masih kosong.</div>
+
+                <div v-if="cart.length === 0" class="empty-cart">
+                    <i class="pi pi-shopping-cart" style="font-size: 2rem; opacity: 0.3" />
+                    <p class="text-500 text-sm mt-2">Keranjang masih kosong.</p>
+                </div>
+
                 <template v-else>
                     <div class="cart-list">
                         <div v-for="item in cart" :key="item.id" class="cart-item">
@@ -450,15 +438,101 @@ const processTransaction = async () => {
                 </template>
             </aside>
         </div>
+
+        <!-- ===== MOBILE BOTTOM SHEET CART (mobile only) ===== -->
+        <transition name="sheet">
+            <div v-if="showCart" class="mobile-cart-overlay" @click.self="showCart = false">
+                <div class="mobile-cart-sheet">
+                    <div class="sheet-handle" />
+                    <div class="sheet-header">
+                        <span class="font-semibold text-base">🛒 Keranjang</span>
+                        <Button icon="pi pi-times" text rounded size="small" @click="showCart = false" />
+                    </div>
+
+                    <div class="sheet-body">
+                        <div v-if="cart.length === 0" class="empty-cart">
+                            <i class="pi pi-shopping-cart" style="font-size: 2rem; opacity: 0.3" />
+                            <p class="text-500 text-sm mt-2">Keranjang masih kosong.</p>
+                        </div>
+
+                        <template v-else>
+                            <div class="cart-list">
+                                <div v-for="item in cart" :key="item.id" class="cart-item">
+                                    <div class="cart-item-name">
+                                        <div class="font-medium text-sm">{{ item.name }}</div>
+                                        <div class="text-500 text-xs">Rp {{ item.price.toLocaleString() }}</div>
+                                    </div>
+                                    <div class="cart-item-actions">
+                                        <Button icon="pi pi-minus" rounded text size="small" @click="changeQty(item, -1)" />
+                                        <span class="qty-num">{{ item.qty }}</span>
+                                        <Button icon="pi pi-plus" rounded text size="small" @click="changeQty(item, 1)" />
+                                        <Button icon="pi pi-trash" text severity="danger" size="small" @click="removeFromCart(item.id)" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <Divider />
+
+                            <div class="checkout-fields mb-3">
+                                <label class="text-sm text-600 block mb-1">Nama Pelanggan (Opsional)</label>
+                                <InputText v-model="customerName" placeholder="Contoh: Budi" class="w-full mb-3" />
+                                <label class="text-sm text-600 block mb-1">Metode Bayar</label>
+                                <SelectButton v-model="selectedPayment" :options="paymentMethods" class="w-full mb-2 method-selector" />
+                            </div>
+
+                            <div class="summary-rows mb-3">
+                                <div class="summary-row">
+                                    <span class="text-600 text-sm">Subtotal</span>
+                                    <span class="text-sm">Rp {{ subtotal.toLocaleString() }}</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span class="text-600 text-sm">Diskon</span>
+                                    <InputText type="number" class="w-5rem text-sm" v-model.number="discount" />
+                                </div>
+                                <div class="summary-row">
+                                    <span class="text-600 text-sm">Pajak (10%)</span>
+                                    <span class="text-sm">Rp {{ tax.toLocaleString() }}</span>
+                                </div>
+                                <div class="summary-row total-row">
+                                    <span class="font-bold">Total</span>
+                                    <span class="font-bold text-primary">Rp {{ total.toLocaleString() }}</span>
+                                </div>
+                            </div>
+
+                            <template v-if="selectedPayment === 'Tunai'">
+                                <label class="text-sm text-600 block mb-1">Uang Diterima</label>
+                                <InputText type="number" v-model.number="payment" class="w-full mb-2" />
+                                <div class="change-box mb-3">
+                                    Kembalian: <strong>Rp {{ change.toLocaleString() }}</strong>
+                                </div>
+                            </template>
+                            <div v-else class="mb-3 p-2 border-round surface-100 text-center text-sm text-600">Pastikan pembayaran {{ selectedPayment }} berhasil diterima.</div>
+
+                            <div class="flex flex-column gap-2 pb-2">
+                                <Button label="Bayar & Cetak" icon="pi pi-print" severity="success" @click="processTransaction" :disabled="selectedPayment === 'Tunai' && payment < total" />
+                                <Button label="Batalkan" severity="danger" outlined @click="clearCart" />
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </transition>
     </div>
 </template>
 
 <style scoped>
+/* =====================
+   BASE
+   ===================== */
 .pos-wrapper {
     min-height: 100vh;
     box-sizing: border-box;
     position: relative;
 }
+
+/* =====================
+   LAYOUT GRID
+   ===================== */
 .pos-layout {
     display: grid;
     grid-template-columns: 1fr 360px;
@@ -468,18 +542,24 @@ const processTransaction = async () => {
     margin: 0 auto;
     box-sizing: border-box;
 }
+
 .card-box {
     border-radius: 14px;
     padding: 18px;
     border: 1px solid var(--surface-border);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
+
 .left-panel {
     display: flex;
     flex-direction: column;
     gap: 20px;
     min-width: 0;
 }
+
+/* =====================
+   CATEGORY SCROLL
+   ===================== */
 .category-scroll {
     display: flex;
     flex-wrap: wrap;
@@ -492,11 +572,16 @@ const processTransaction = async () => {
 .category-scroll::-webkit-scrollbar {
     display: none;
 }
+
+/* =====================
+   PRODUCT GRID
+   ===================== */
 .product-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
     gap: 16px;
 }
+
 .product-card {
     background: var(--surface-ground) !important;
     border: 1px solid var(--surface-border);
@@ -512,17 +597,27 @@ const processTransaction = async () => {
     transform: translateY(-3px);
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
 }
+.product-disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
 .product-img {
     width: 100%;
     height: 140px;
     object-fit: cover;
 }
+
 .product-info {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 4px;
     padding: 12px;
 }
+
+/* =====================
+   PAGINATOR
+   ===================== */
 .paginator-wrapper {
     margin-top: 16px;
     border-top: 1px solid var(--surface-border);
@@ -533,6 +628,10 @@ const processTransaction = async () => {
     border: none !important;
     padding: 0 !important;
 }
+
+/* =====================
+   RIGHT PANEL (Desktop)
+   ===================== */
 .right-panel {
     position: sticky;
     top: 20px;
@@ -541,6 +640,25 @@ const processTransaction = async () => {
     overflow-y: auto;
     scrollbar-width: thin;
 }
+.panel-disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* =====================
+   CART LIST
+   ===================== */
+.empty-cart {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    text-align: center;
+    background: var(--surface-100, #f8f9fa);
+    border-radius: 10px;
+}
+
 .cart-list {
     display: flex;
     flex-direction: column;
@@ -576,12 +694,20 @@ const processTransaction = async () => {
     font-weight: 600;
     font-size: 0.9rem;
 }
+
+/* =====================
+   PAYMENT SELECTOR
+   ===================== */
 :deep(.method-selector .p-button) {
     padding: 0.5rem;
     font-size: 0.85rem;
     flex: 1;
     justify-content: center;
 }
+
+/* =====================
+   SUMMARY
+   ===================== */
 .summary-rows {
     display: flex;
     flex-direction: column;
@@ -604,6 +730,10 @@ const processTransaction = async () => {
     color: var(--green-600, #22c55e);
     font-size: 0.9rem;
 }
+
+/* =====================
+   MOBILE HEADER
+   ===================== */
 .mobile-header {
     display: none;
     align-items: center;
@@ -614,8 +744,78 @@ const processTransaction = async () => {
     top: 0;
     z-index: 100;
 }
+.mobile-header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
 
-/* RESPONSIVE */
+/* =====================
+   MOBILE BOTTOM SHEET
+   ===================== */
+.mobile-cart-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    display: flex;
+    align-items: flex-end;
+}
+.mobile-cart-sheet {
+    width: 100%;
+    border-radius: 20px 20px 0 0;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--surface-card, #ffffff);
+}
+.sheet-handle {
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--surface-400, #adb5bd);
+    margin: 10px auto 0;
+    flex-shrink: 0;
+}
+.sheet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px 8px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--surface-border);
+}
+.sheet-body {
+    overflow-y: auto;
+    padding: 12px 16px 24px;
+    flex: 1;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* =====================
+   SHEET TRANSITION
+   ===================== */
+.sheet-enter-active,
+.sheet-leave-active {
+    transition: opacity 0.25s ease;
+}
+.sheet-enter-active .mobile-cart-sheet,
+.sheet-leave-active .mobile-cart-sheet {
+    transition: transform 0.3s ease;
+}
+.sheet-enter-from,
+.sheet-leave-to {
+    opacity: 0;
+}
+.sheet-enter-from .mobile-cart-sheet,
+.sheet-leave-to .mobile-cart-sheet {
+    transform: translateY(100%);
+}
+
+/* =====================
+   RESPONSIVE
+   ===================== */
 @media (max-width: 1100px) {
     .pos-layout {
         grid-template-columns: 1fr 300px;
@@ -625,22 +825,31 @@ const processTransaction = async () => {
         grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     }
 }
+
+/* MOBILE: sembunyikan elemen desktop, tampilkan elemen mobile */
 @media (max-width: 768px) {
-    .pos-wrapper {
-        padding-bottom: 0;
+    /* Sembunyikan semua elemen yang hanya untuk desktop */
+    .desktop-only {
+        display: none !important;
     }
+
+    /* Tampilkan mobile header */
     .mobile-header {
         display: flex;
     }
+
+    /* Layout jadi single column */
     .pos-layout {
         grid-template-columns: 1fr;
         padding: 12px;
         gap: 14px;
     }
-    .desktop-cart,
-    .desktop-header {
-        display: none;
+
+    /* Sembunyikan right panel di mobile (pakai bottom sheet) */
+    .right-panel {
+        display: none !important;
     }
+
     .product-grid {
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
         gap: 12px;
@@ -653,6 +862,7 @@ const processTransaction = async () => {
         overflow-x: auto;
     }
 }
+
 @media (max-width: 480px) {
     .pos-layout {
         padding: 8px;
@@ -674,6 +884,7 @@ const processTransaction = async () => {
         gap: 4px;
     }
 }
+
 @media (max-width: 360px) {
     .product-grid {
         grid-template-columns: 1fr;
