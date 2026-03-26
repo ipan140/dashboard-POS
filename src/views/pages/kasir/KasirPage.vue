@@ -9,6 +9,7 @@ import Button from 'primevue/button';
 import Divider from 'primevue/divider';
 import InputText from 'primevue/inputtext';
 import Paginator from 'primevue/paginator';
+import SelectButton from 'primevue/selectbutton'; // TAMBAHAN: Import SelectButton
 import Tag from 'primevue/tag';
 
 /* === DATA PRODUK === */
@@ -62,6 +63,12 @@ const discount = ref(0);
 const taxPercent = ref(10);
 const payment = ref(0);
 
+/* === TAMBAHAN: FITUR OPERASIONAL POS === */
+const paymentMethods = ref(['Tunai', 'QRIS', 'Transfer']);
+const selectedPayment = ref('Tunai');
+const customerName = ref('');
+const receiptData = ref(null); // Menyimpan data sementara untuk dicetak ke struk
+
 const toast = useToast();
 const cartCount = computed(() => cart.value.reduce((s, i) => s + i.qty, 0));
 
@@ -100,39 +107,70 @@ const clearCart = async () => {
         cart.value = [];
         payment.value = 0;
         discount.value = 0;
+        customerName.value = '';
+        selectedPayment.value = 'Tunai';
         showCart.value = false;
     }
 };
 
 const processTransaction = async () => {
+    // Validasi Keranjang
     if (cart.value.length === 0) {
         toast.add({ severity: 'warn', summary: 'Kosong', detail: 'Tidak ada item di keranjang.' });
         return;
     }
-    if (payment.value < total.value) {
-        toast.add({ severity: 'error', summary: 'Pembayaran', detail: 'Uang tidak cukup.' });
+
+    // Validasi Pembayaran (Hanya jika metode Tunai yang butuh cek uang masuk)
+    if (selectedPayment.value === 'Tunai' && payment.value < total.value) {
+        toast.add({ severity: 'error', summary: 'Pembayaran', detail: 'Uang tunai tidak cukup.' });
         return;
     }
+
     const c = await Swal.fire({
         title: 'Proses Transaksi?',
-        html: `<b>Total:</b> Rp ${total.value.toLocaleString()}`,
+        html: `<b>Total:</b> Rp ${total.value.toLocaleString()}<br><b>Metode:</b> ${selectedPayment.value}`,
         icon: 'question',
-        showCancelButton: true
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Cetak Struk',
+        cancelButtonText: 'Batal'
     });
+
     if (c.isConfirmed) {
-        Swal.fire({ title: 'Berhasil!', text: 'Transaksi selesai.', icon: 'success', timer: 1400, showConfirmButton: false });
-        cart.value = [];
-        payment.value = 0;
-        discount.value = 0;
-        showCart.value = false;
+        // 1. Simpan data transaksi ke variabel struk sebelum keranjang dikosongkan
+        receiptData.value = {
+            date: new Date().toLocaleString('id-ID'),
+            customer: customerName.value || 'Umum',
+            method: selectedPayment.value,
+            items: [...cart.value], // Clone array keranjang
+            subtotal: subtotal.value,
+            discount: discount.value,
+            tax: tax.value,
+            total: total.value,
+            cash: selectedPayment.value === 'Tunai' ? payment.value : total.value, // Jika QRIS, otomatis lunas
+            change: selectedPayment.value === 'Tunai' ? change.value : 0
+        };
+
+        Swal.fire({ title: 'Berhasil!', text: 'Mencetak struk...', icon: 'success', timer: 1200, showConfirmButton: false });
+
+        // 2. Tunggu sebentar agar Vue me-render area struk, lalu panggil window.print()
+        setTimeout(() => {
+            window.print();
+
+            // 3. Reset state keranjang setelah selesai mencetak
+            cart.value = [];
+            payment.value = 0;
+            discount.value = 0;
+            customerName.value = '';
+            selectedPayment.value = 'Tunai';
+            showCart.value = false;
+        }, 300); // Jeda 300ms agar aman
     }
 };
 </script>
 
 <template>
     <div class="pos-wrapper">
-        <!-- ===== HEADER (mobile only) ===== -->
-        <header class="mobile-header surface-card">
+        <header class="mobile-header surface-card no-print">
             <div>
                 <div class="text-900 text-lg font-semibold">Kasir POS</div>
                 <div class="text-500 text-xs">Sistem Penjualan</div>
@@ -140,17 +178,13 @@ const processTransaction = async () => {
             <Button icon="pi pi-shopping-cart" rounded class="cart-fab" @click="showCart = !showCart" :badge="cartCount > 0 ? String(cartCount) : undefined" badgeSeverity="danger" />
         </header>
 
-        <!-- ===== LAYOUT ===== -->
-        <div class="pos-layout">
-            <!-- ========== KOLOM KIRI ========== -->
+        <div class="pos-layout no-print">
             <div class="left-panel">
-                <!-- HEADER desktop -->
                 <div class="surface-card card-box desktop-header">
                     <div class="text-900 text-xl font-semibold mb-1">Kasir POS</div>
                     <div class="text-600 text-sm">Sistem Penjualan (Point of Sale)</div>
                 </div>
 
-                <!-- FILTER -->
                 <div class="surface-card card-box">
                     <InputText v-model="query" placeholder="Cari produk..." class="w-full mb-3" @input="currentPage = 0" />
                     <div class="category-scroll">
@@ -170,7 +204,6 @@ const processTransaction = async () => {
                     </div>
                 </div>
 
-                <!-- PRODUK GRID + PAGINATOR -->
                 <div class="surface-card card-box">
                     <div v-if="filteredProducts.length === 0" class="text-center text-500 py-4">Produk tidak ditemukan.</div>
                     <template v-else>
@@ -187,7 +220,6 @@ const processTransaction = async () => {
                             </div>
                         </div>
 
-                        <!-- PAGINATOR -->
                         <div class="paginator-wrapper">
                             <Paginator :rows="rowsPerPage" :totalRecords="filteredProducts.length" :rowsPerPageOptions="[4, 8, 12]" @page="onPageChange" class="paginator" />
                         </div>
@@ -195,7 +227,6 @@ const processTransaction = async () => {
                 </div>
             </div>
 
-            <!-- ========== KOLOM KANAN (desktop sidebar) ========== -->
             <aside class="right-panel surface-card card-box desktop-cart">
                 <h3 class="text-lg font-semibold mb-3">🛒 Keranjang</h3>
                 <div v-if="cart.length === 0" class="p-4 text-center text-500 surface-100 border-round">Keranjang masih kosong.</div>
@@ -214,7 +245,17 @@ const processTransaction = async () => {
                             </div>
                         </div>
                     </div>
+
                     <Divider />
+
+                    <div class="checkout-fields mb-3">
+                        <label class="text-sm text-600 block mb-1">Nama Pelanggan (Opsional)</label>
+                        <InputText v-model="customerName" placeholder="Contoh: Budi" class="w-full mb-3" />
+
+                        <label class="text-sm text-600 block mb-1">Metode Bayar</label>
+                        <SelectButton v-model="selectedPayment" :options="paymentMethods" class="w-full mb-2 method-selector" />
+                    </div>
+
                     <div class="summary-rows">
                         <div class="summary-row">
                             <span class="text-600 text-sm">Subtotal</span>
@@ -233,22 +274,26 @@ const processTransaction = async () => {
                             <span class="font-bold text-primary">Rp {{ total.toLocaleString() }}</span>
                         </div>
                     </div>
-                    <label class="text-sm text-600 block mb-1 mt-2">Uang Diterima</label>
-                    <InputText type="number" v-model.number="payment" class="w-full mb-2" />
-                    <div class="change-box mb-3">
-                        Kembalian: <strong>Rp {{ change.toLocaleString() }}</strong>
-                    </div>
+
+                    <template v-if="selectedPayment === 'Tunai'">
+                        <label class="text-sm text-600 block mb-1 mt-3">Uang Diterima</label>
+                        <InputText type="number" v-model.number="payment" class="w-full mb-2" />
+                        <div class="change-box mb-3">
+                            Kembalian: <strong>Rp {{ change.toLocaleString() }}</strong>
+                        </div>
+                    </template>
+                    <div v-else class="mb-3 mt-3 p-2 border-round surface-100 text-center text-sm text-600">Pastikan pembayaran {{ selectedPayment }} berhasil diterima.</div>
+
                     <div class="flex flex-column gap-2">
-                        <Button label="Proses Transaksi" severity="success" @click="processTransaction" />
+                        <Button label="Bayar & Cetak" icon="pi pi-print" severity="success" @click="processTransaction" :disabled="selectedPayment === 'Tunai' && payment < total" />
                         <Button label="Batalkan" severity="danger" outlined @click="clearCart" />
                     </div>
                 </template>
             </aside>
         </div>
 
-        <!-- ========== MOBILE BOTTOM SHEET CART ========== -->
         <transition name="sheet">
-            <div v-if="showCart" class="mobile-cart-overlay" @click.self="showCart = false">
+            <div v-if="showCart" class="mobile-cart-overlay no-print" @click.self="showCart = false">
                 <div class="mobile-cart-sheet">
                     <div class="sheet-handle" />
                     <div class="sheet-header">
@@ -272,7 +317,17 @@ const processTransaction = async () => {
                                     </div>
                                 </div>
                             </div>
+
                             <Divider />
+
+                            <div class="checkout-fields mb-3">
+                                <label class="text-sm text-600 block mb-1">Nama Pelanggan</label>
+                                <InputText v-model="customerName" placeholder="Contoh: Budi" class="w-full mb-3" />
+
+                                <label class="text-sm text-600 block mb-1">Metode Bayar</label>
+                                <SelectButton v-model="selectedPayment" :options="paymentMethods" class="w-full mb-2 method-selector" />
+                            </div>
+
                             <div class="summary-rows">
                                 <div class="summary-row">
                                     <span class="text-600 text-sm">Subtotal</span>
@@ -291,13 +346,18 @@ const processTransaction = async () => {
                                     <span class="font-bold text-primary">Rp {{ total.toLocaleString() }}</span>
                                 </div>
                             </div>
-                            <label class="text-sm text-600 block mb-1 mt-2">Uang Diterima</label>
-                            <InputText type="number" v-model.number="payment" class="w-full mb-2" />
-                            <div class="change-box mb-3">
-                                Kembalian: <strong>Rp {{ change.toLocaleString() }}</strong>
-                            </div>
-                            <div class="flex flex-column gap-2 pb-2">
-                                <Button label="Proses Transaksi" severity="success" @click="processTransaction" />
+
+                            <template v-if="selectedPayment === 'Tunai'">
+                                <label class="text-sm text-600 block mb-1 mt-3">Uang Diterima</label>
+                                <InputText type="number" v-model.number="payment" class="w-full mb-2" />
+                                <div class="change-box mb-3">
+                                    Kembalian: <strong>Rp {{ change.toLocaleString() }}</strong>
+                                </div>
+                            </template>
+                            <div v-else class="mb-3 mt-3 p-2 border-round surface-100 text-center text-sm text-600">Pastikan pembayaran {{ selectedPayment }} berhasil diterima.</div>
+
+                            <div class="flex flex-column gap-2 pb-2 mt-2">
+                                <Button label="Bayar & Cetak" icon="pi pi-print" severity="success" @click="processTransaction" :disabled="selectedPayment === 'Tunai' && payment < total" />
                                 <Button label="Batalkan" severity="danger" outlined @click="clearCart" />
                             </div>
                         </template>
@@ -305,10 +365,78 @@ const processTransaction = async () => {
                 </div>
             </div>
         </transition>
+
+        <div class="print-area">
+            <div v-if="receiptData" class="receipt-ticket">
+                <div class="txt-center bold txt-xl mb-1">GEDANG KRENYES</div>
+                <div class="txt-center txt-xs mb-3">Jl. Ketintang Baru, Surabaya<br />Telp: 0812-3456-7890</div>
+
+                <div class="border-dashed mb-2"></div>
+
+                <div class="txt-xs mb-2">
+                    <div class="flex-row">
+                        <span>Tgl:</span> <span>{{ receiptData.date }}</span>
+                    </div>
+                    <div class="flex-row"><span>Kasir:</span> <span>Admin</span></div>
+                    <div class="flex-row">
+                        <span>Pelanggan:</span> <span>{{ receiptData.customer }}</span>
+                    </div>
+                </div>
+
+                <div class="border-dashed mb-2"></div>
+
+                <div class="txt-xs mb-2">
+                    <div v-for="item in receiptData.items" :key="item.id" class="mb-1">
+                        <div class="flex-row bold">
+                            <span>{{ item.name }}</span>
+                            <span>{{ (item.price * item.qty).toLocaleString('id-ID') }}</span>
+                        </div>
+                        <div class="txt-gray">{{ item.qty }} x {{ item.price.toLocaleString('id-ID') }}</div>
+                    </div>
+                </div>
+
+                <div class="border-dashed mb-2"></div>
+
+                <div class="txt-xs bold">
+                    <div class="flex-row mb-1">
+                        <span>SUBTOTAL</span>
+                        <span>{{ receiptData.subtotal.toLocaleString('id-ID') }}</span>
+                    </div>
+                    <div v-if="receiptData.discount > 0" class="flex-row mb-1">
+                        <span>DISKON</span>
+                        <span>-{{ receiptData.discount.toLocaleString('id-ID') }}</span>
+                    </div>
+                    <div class="flex-row mb-1">
+                        <span>PAJAK (10%)</span>
+                        <span>{{ receiptData.tax.toLocaleString('id-ID') }}</span>
+                    </div>
+                    <div class="flex-row txt-sm mt-1 mb-2">
+                        <span>TOTAL</span>
+                        <span>{{ receiptData.total.toLocaleString('id-ID') }}</span>
+                    </div>
+
+                    <div class="flex-row">
+                        <span>METODE:</span> <span>{{ receiptData.method }}</span>
+                    </div>
+                    <div v-if="receiptData.method === 'Tunai'" class="flex-row">
+                        <span>TUNAI:</span>
+                        <span>{{ receiptData.cash.toLocaleString('id-ID') }}</span>
+                    </div>
+                    <div v-if="receiptData.method === 'Tunai'" class="flex-row">
+                        <span>KEMBALI:</span>
+                        <span>{{ receiptData.change.toLocaleString('id-ID') }}</span>
+                    </div>
+                </div>
+
+                <div class="border-dashed mt-2 mb-2"></div>
+                <div class="txt-center txt-xs italic mt-4">Terima Kasih Atas Kunjungan Anda!</div>
+            </div>
+        </div>
     </div>
 </template>
 
 <style scoped>
+/* ===== STYLE DASHBOARD ASLI ===== */
 .pos-wrapper {
     min-height: 100vh;
     box-sizing: border-box;
@@ -387,7 +515,6 @@ const processTransaction = async () => {
     padding: 12px;
 }
 
-/* ===== PAGINATOR ===== */
 .paginator-wrapper {
     margin-top: 16px;
     border-top: 1px solid var(--surface-border);
@@ -444,6 +571,14 @@ const processTransaction = async () => {
     text-align: center;
     font-weight: 600;
     font-size: 0.9rem;
+}
+
+/* Modifikasi Selector SelectButton agar muat di sidebar */
+:deep(.method-selector .p-button) {
+    padding: 0.5rem;
+    font-size: 0.85rem;
+    flex: 1;
+    justify-content: center;
 }
 
 .summary-rows {
@@ -530,9 +665,7 @@ const processTransaction = async () => {
     -webkit-overflow-scrolling: touch;
 }
 
-.sheet-enter-active {
-    transition: opacity 0.25s ease;
-}
+.sheet-enter-active,
 .sheet-leave-active {
     transition: opacity 0.25s ease;
 }
@@ -585,9 +718,7 @@ const processTransaction = async () => {
         padding: 12px;
         gap: 14px;
     }
-    .desktop-cart {
-        display: none;
-    }
+    .desktop-cart,
     .desktop-header {
         display: none;
     }
@@ -629,6 +760,100 @@ const processTransaction = async () => {
 @media (max-width: 360px) {
     .product-grid {
         grid-template-columns: 1fr;
+    }
+}
+
+/* ===== STYLE AREA CETAK (Hanya Aktif Saat Print) ===== */
+.print-area {
+    display: none;
+}
+
+@media print {
+    /* Sembunyikan semua elemen layout POS web */
+    .no-print {
+        display: none !important;
+    }
+    body,
+    html {
+        background: #fff !important;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Munculkan area cetak */
+    .print-area {
+        display: block !important;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        color: #000;
+    }
+
+    /* Ukuran kertas struk thermal (58mm) */
+    .receipt-ticket {
+        width: 58mm;
+        margin: 0;
+        padding: 0;
+        font-family: 'Courier New', Courier, monospace; /* Font khas mesin kasir */
+    }
+
+    /* Utility Class khusus print agar tidak terpengaruh PrimeVue/Tailwind */
+    .txt-center {
+        text-align: center;
+    }
+    .txt-xl {
+        font-size: 16pt;
+    }
+    .txt-sm {
+        font-size: 10pt;
+    }
+    .txt-xs {
+        font-size: 8pt;
+    }
+    .bold {
+        font-weight: bold;
+    }
+    .italic {
+        font-style: italic;
+    }
+    .mb-1 {
+        margin-bottom: 4px;
+    }
+    .mb-2 {
+        margin-bottom: 8px;
+    }
+    .mb-3 {
+        margin-bottom: 12px;
+    }
+    .mt-1 {
+        margin-top: 4px;
+    }
+    .mt-2 {
+        margin-top: 8px;
+    }
+    .mt-4 {
+        margin-top: 16px;
+    }
+    .txt-gray {
+        color: #555;
+    }
+
+    .border-dashed {
+        border-top: 1px dashed #000;
+        width: 100%;
+        height: 1px;
+    }
+
+    .flex-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+
+    @page {
+        margin: 0;
     }
 }
 </style>

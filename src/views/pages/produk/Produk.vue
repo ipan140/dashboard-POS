@@ -379,37 +379,31 @@ const viewMode = ref('table');
 </template>
 
 <style scoped>
+/* ===== STAT CARD ===== */
 .stat-card {
     padding: 1.25rem;
     border-radius: 0.5rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
+    background: var(--surface-card, #ffffff); /* Adaptif dengan tema Sakai */
+    border: 1px solid var(--surface-border, #e5e7eb); /* Border otomatis menyesuaikan */
+    color: var(--text-color); /* Menyesuaikan warna teks */
 }
 
-.dark .stat-card {
-    background: #1f2937;
-    border-color: #374151;
-}
-
+/* ===== THUMBNAIL GAMBAR ===== */
 .thumb {
     width: 56px;
     height: 56px;
     object-fit: cover;
     border-radius: 8px;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--surface-border, #e5e7eb); /* Mengikuti border tema */
     flex-shrink: 0;
 }
 
-.dark .thumb {
-    border-color: #4b5563;
-}
-
-/* Upload zone */
+/* ===== UPLOAD ZONE ===== */
 .upload-zone {
     width: 100%;
     height: 160px;
-    border: 2px dashed #d1d5db;
+    border: 2px dashed var(--surface-border, #d1d5db); /* Garis putus-putus adaptif */
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -419,33 +413,29 @@ const viewMode = ref('table');
     transition:
         border-color 0.2s,
         background-color 0.2s;
-    background: #f9fafb;
+    background: var(--surface-ground, #f9fafb); /* Latar belakang area upload */
+    color: var(--text-color-secondary); /* Warna teks/ikon di dalam zona */
 }
 
+/* Efek saat kursor diarahkan ke area upload */
 .upload-zone:hover {
-    border-color: #3b82f6;
-    background: #eff6ff;
-}
-
-.dark .upload-zone {
-    border-color: #4b5563;
-    background: #374151;
-}
-
-.dark .upload-zone:hover {
-    border-color: #60a5fa;
-    background: #1e3a5f;
+    border-color: var(--primary-color, #3b82f6); /* Menggunakan warna utama (primary) Sakai */
+    background: var(--surface-hover, #eff6ff); /* Warna latar hover adaptif */
 }
 
 .upload-zone-sm {
     height: 100px;
 }
 
-/* line clamp utility */
+/* ===== UTILITY ===== */
+/* line clamp utility (Tetap dipertahankan karena ini fungsional, bukan warna) */
 .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
+
+/* Semua class .dark manual DIHAPUS karena PrimeVue Sakai 
+   sudah menanganinya secara otomatis via CSS Variables di atas */
 </style>

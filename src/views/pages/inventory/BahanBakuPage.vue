@@ -278,7 +278,7 @@ const viewMode = ref('table');
 .page-wrap {
     padding: 1rem;
     width: 100%;
-    color: #111827;
+    color: var(--text-color, #111827);
 }
 @media (min-width: 640px) {
     .page-wrap {
@@ -316,22 +316,19 @@ const viewMode = ref('table');
     padding: 1rem;
     border-radius: 0.5rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-    background: #fff;
-    border: 1px solid #e5e7eb;
-}
-.dark .stat-card {
-    background: #1f2937;
-    border-color: #374151;
+    background: var(--surface-card, #fff);
+    border: 1px solid var(--surface-border, #e5e7eb);
 }
 .stat-label {
     font-size: 0.8rem;
-    color: #6b7280;
+    color: var(--text-color-secondary, #6b7280);
     margin-bottom: 0.25rem;
 }
 .stat-value {
     font-size: 1.75rem;
     font-weight: 600;
     line-height: 1.2;
+    color: var(--text-color, #111827);
 }
 .stat-value--sm {
     font-size: 1.15rem;
@@ -348,17 +345,13 @@ const viewMode = ref('table');
     border-radius: 0.75rem;
     padding: 1rem;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-    background: #fff;
-    border: 1px solid #e5e7eb;
+    background: var(--surface-card, #fff);
+    border: 1px solid var(--surface-border, #e5e7eb);
 }
 @media (min-width: 640px) {
     .main-card {
         padding: 1.25rem;
     }
-}
-.dark .main-card {
-    background: #1f2937;
-    border-color: #374151;
 }
 
 /* ===== FILTER BAR ===== */
@@ -389,9 +382,9 @@ const viewMode = ref('table');
 .toggle-btn {
     padding: 0.35rem 0.6rem;
     border-radius: 0.4rem;
-    border: 1px solid #d1d5db;
-    background: #fff;
-    color: #6b7280;
+    border: 1px solid var(--surface-border, #d1d5db);
+    background: var(--surface-card, #fff);
+    color: var(--text-color-secondary, #6b7280);
     cursor: pointer;
     font-size: 0.85rem;
     transition:
@@ -399,19 +392,15 @@ const viewMode = ref('table');
         color 0.15s;
 }
 .toggle-btn.active {
-    background: #2563eb;
-    color: #fff;
-    border-color: #2563eb;
+    background: var(--primary-color, #2563eb);
+    color: var(--primary-color-text, #fff);
+    border-color: var(--primary-color, #2563eb);
 }
-.dark .toggle-btn {
-    background: #374151;
-    border-color: #4b5563;
-    color: #d1d5db;
-}
-.dark .toggle-btn.active {
-    background: #2563eb;
-    border-color: #2563eb;
-    color: #fff;
+
+.layout-theme-dark .toggle-btn.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--primary-color-text);
 }
 
 /* ===== TABLE ===== */
@@ -426,34 +415,22 @@ const viewMode = ref('table');
     min-width: 360px;
 }
 .inv-table thead tr {
-    background: #f3f4f6;
-}
-.dark .inv-table thead tr {
-    background: #374151;
+    background: var(--surface-ground, #f3f4f6); /* Header tabel mengikuti tema Sakai */
 }
 .inv-table th {
     padding: 0.65rem 0.75rem;
     text-align: left;
     font-weight: 600;
-    color: #374151;
+    color: var(--text-color, #374151);
     white-space: nowrap;
-}
-.dark .inv-table th {
-    color: #e5e7eb;
 }
 
 .inv-row {
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--surface-border, #e5e7eb);
     transition: background 0.1s;
 }
 .inv-row:hover {
-    background: #f9fafb;
-}
-.dark .inv-row {
-    border-color: #374151;
-}
-.dark .inv-row:hover {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--surface-hover, #f9fafb); /* Hover row tabel */
 }
 
 .inv-table td {
@@ -466,7 +443,7 @@ const viewMode = ref('table');
 }
 .row-desc {
     font-size: 0.78rem;
-    color: #6b7280;
+    color: var(--text-color-secondary, #6b7280);
 }
 
 .stock-val {
@@ -475,11 +452,11 @@ const viewMode = ref('table');
 }
 .stock-min {
     font-size: 0.72rem;
-    color: #9ca3af;
+    color: var(--text-color-secondary, #9ca3af);
 }
 
 .price-cell {
-    color: #16a34a;
+    color: #16a34a; /* Di dark mode, warna hijau ini biasanya masih terbaca, kalau tidak ganti ke var(--green-400) */
     font-weight: 600;
 }
 
@@ -510,16 +487,11 @@ const viewMode = ref('table');
         display: none;
     }
 }
-.hide-sm {
-    display: none;
-}
-.hide-md {
-    display: none;
-}
+.hide-sm,
+.hide-md,
 .hide-lg {
     display: none;
 }
-
 @media (min-width: 640px) {
     .hide-sm {
         display: table-cell;
@@ -560,34 +532,30 @@ const viewMode = ref('table');
 
 .inv-card {
     border-radius: 0.6rem;
-    border: 1px solid #e5e7eb;
-    background: #f9fafb;
+    border: 1px solid var(--surface-border, #e5e7eb);
+    background: var(--surface-ground, #f9fafb);
     overflow: hidden;
     display: flex;
     flex-direction: column;
 }
-.dark .inv-card {
-    background: #374151;
-    border-color: #4b5563;
-}
+
 .inv-card__header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     gap: 0.5rem;
     padding: 0.75rem;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--surface-border, #e5e7eb);
 }
-.dark .inv-card__header {
-    border-color: #4b5563;
-}
+
 .inv-card__name {
     font-weight: 600;
     font-size: 0.9rem;
+    color: var(--text-color);
 }
 .inv-card__desc {
     font-size: 0.75rem;
-    color: #6b7280;
+    color: var(--text-color-secondary, #6b7280);
     margin-top: 0.15rem;
 }
 .inv-card__body {
@@ -602,19 +570,20 @@ const viewMode = ref('table');
     justify-content: space-between;
     align-items: center;
     font-size: 0.82rem;
+    color: var(--text-color);
 }
 .inv-card__label {
-    color: #6b7280;
+    color: var(--text-color-secondary, #6b7280);
 }
 .text-muted {
-    color: #9ca3af;
+    color: var(--text-color-secondary, #9ca3af);
 }
 
 /* ===== EMPTY STATE ===== */
 .empty-state {
     text-align: center;
     padding: 2.5rem 1rem;
-    color: #9ca3af;
+    color: var(--text-color-secondary, #9ca3af);
 }
 
 /* ===== MODAL FORM ===== */
@@ -629,17 +598,5 @@ const viewMode = ref('table');
     gap: 0.65rem;
 }
 
-/* ===== DARK TEXT ===== */
-.dark .page-wrap {
-    color: #f3f4f6;
-}
-.dark .stat-label {
-    color: #9ca3af;
-}
-.dark .row-desc {
-    color: #9ca3af;
-}
-.dark .inv-card__desc {
-    color: #9ca3af;
-}
+/* HAPUS SEMUA .dark KARENA SEKARANG SUDAH OTOMATIS IKUT VARIABEL SAKAI */
 </style>

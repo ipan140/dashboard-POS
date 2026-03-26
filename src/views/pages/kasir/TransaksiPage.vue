@@ -374,12 +374,12 @@ const exportPDF = async () => {
     font-size: 1.2rem;
     font-weight: 600;
     margin-bottom: 20px;
-    color: var(--text-color, #1f2937);
+    color: var(--text-color, #1f2937); /* Sudah adaptif */
 }
 
 .card {
-    background: var(--surface-card, #ffffff);
-    border: 1px solid var(--surface-border, #e5e7eb);
+    background: var(--surface-card, #ffffff); /* Latar belakang adaptif */
+    border: 1px solid var(--surface-border, #e5e7eb); /* Border adaptif */
     border-radius: 14px;
     padding: 24px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -431,7 +431,7 @@ const exportPDF = async () => {
     min-width: 500px;
 }
 .trx-table thead tr {
-    background: var(--surface-100, #f3f4f6);
+    background: var(--surface-section, #f3f4f6); /* Perbaikan: Gunakan surface-section untuk header tabel */
 }
 .trx-table th {
     padding: 12px 14px;
@@ -454,7 +454,7 @@ const exportPDF = async () => {
     border-bottom: none;
 }
 .trx-table tbody tr:hover td {
-    background: var(--surface-50, #f9fafb);
+    background: var(--surface-hover, #f9fafb); /* Perbaikan: Gunakan surface-hover agar hover terlihat di dark mode */
 }
 
 .empty-state {
@@ -528,7 +528,7 @@ const exportPDF = async () => {
 }
 .item-qty {
     font-size: 0.78rem;
-    background: var(--surface-100, #f3f4f6);
+    background: var(--surface-ground, #f3f4f6); /* Perbaikan: Gunakan surface-ground untuk background item */
     border-radius: 6px;
     padding: 2px 8px;
     color: var(--text-color-secondary, #6b7280);
@@ -550,6 +550,7 @@ const exportPDF = async () => {
 .total-label {
     font-weight: 600;
     font-size: 0.95rem;
+    color: var(--text-color); /* Perbaikan: Tambahkan color text-color agar tidak hilang di dark mode */
 }
 .total-value {
     font-weight: 700;
@@ -561,7 +562,7 @@ const exportPDF = async () => {
     margin-top: 12px;
     font-size: 0.85rem;
     color: var(--text-color-secondary, #6b7280);
-    background: var(--surface-50, #f9fafb);
+    background: var(--surface-ground, #f9fafb); /* Perbaikan: Gunakan surface-ground, bukan surface-50 */
     border-radius: 8px;
     padding: 8px 12px;
 }
@@ -623,7 +624,7 @@ const exportPDF = async () => {
         justify-content: space-between;
         align-items: center;
         padding: 9px 14px;
-        border-bottom: 1px solid var(--surface-border, #f3f4f6);
+        border-bottom: 1px solid var(--surface-border, #e5e7eb); /* Perbaikan fallback color */
         font-size: 0.875rem;
     }
     .trx-table tbody tr td:last-child {
