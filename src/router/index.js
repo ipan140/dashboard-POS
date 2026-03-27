@@ -39,6 +39,11 @@ const router = createRouter({
                     name: 'produk',
                     component: () => import('@/views/pages/produk/Produk.vue')
                 },
+                {
+                    path: 'kategori',
+                    name: 'kategori',
+                    component: () => import('@/views/pages/produk/Kategori.vue') // ✅ sesuai
+                },
 
                 // ==============================
                 // MENU INVENTORY
@@ -48,14 +53,34 @@ const router = createRouter({
                     name: 'bahanBaku',
                     component: () => import('@/views/pages/inventory/BahanBakuPage.vue')
                 },
-                
+                {
+                    path: 'stok',
+                    name: 'stok',
+                    component: () => import('@/views/pages/inventory/stok.vue') // ⚠️ lowercase
+                },
+                {
+                    path: 'supplier',
+                    name: 'supplier',
+                    component: () => import('@/views/pages/inventory/supplier.vue') // ⚠️ lowercase
+                },
+
                 // ==============================
-                // MENU ADMIN (disingkat)
+                // MENU ADMIN
                 // ==============================
                 {
                     path: 'admin',
                     name: 'kelolaAdmin',
                     component: () => import('@/views/pages/admin/KelolaAdmin.vue')
+                },
+                {
+                    path: 'audit-log',
+                    name: 'auditLog',
+                    component: () => import('@/views/pages/setting/audit_log.vue') // ⚠️ pindah ke setting
+                },
+                {
+                    path: 'pengaturan',
+                    name: 'pengaturan',
+                    component: () => import('@/views/pages/setting/pengaturan.vue') // ⚠️ folder setting
                 },
 
                 // ==============================
@@ -100,7 +125,7 @@ const router = createRouter({
             path: '/auth/error',
             name: 'error',
             component: () => import('@/views/pages/auth/Error.vue')
-        },
+        }
     ]
 });
 
