@@ -68,11 +68,11 @@ const model = ref([
                 badge: 3, // 👈 untuk notif merah
                 badgeClass: 'p-badge-danger'
             },
-            // {
-            //     label: 'Stok',
-            //     icon: 'pi pi-fw pi-chart-line',
-            //     to: '/stok'
-            // },
+            {
+                label: 'Stok',
+                icon: 'pi pi-fw pi-chart-line',
+                to: '/stok'
+            },
             {
                 label: 'Supplier',
                 icon: 'pi pi-fw pi-truck',
