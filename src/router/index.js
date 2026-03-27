@@ -54,11 +54,6 @@ const router = createRouter({
                     component: () => import('@/views/pages/inventory/BahanBakuPage.vue')
                 },
                 {
-                    path: 'stok',
-                    name: 'stok',
-                    component: () => import('@/views/pages/inventory/stok.vue') // ⚠️ lowercase
-                },
-                {
                     path: 'supplier',
                     name: 'supplier',
                     component: () => import('@/views/pages/inventory/supplier.vue') // ⚠️ lowercase

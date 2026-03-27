@@ -124,31 +124,82 @@ const getInitial = (name) => name?.charAt(0).toUpperCase() ?? '-';
     <div class="supplier-wrap">
         <!-- HEADER -->
         <div class="page-header">
-            <div>
-                <h2 class="page-title"><i class="pi pi-truck" /> Manajemen Supplier</h2>
+            <div class="page-header__text">
+                <h2 class="page-title">
+                    <i class="pi pi-truck" />
+                    Manajemen Supplier
+                </h2>
                 <p class="page-sub">Kelola data supplier bahan baku</p>
             </div>
-            <Button label="Tambah Supplier" icon="pi pi-plus" size="small" @click="openAdd" />
+            <Button label="Tambah Supplier" icon="pi pi-plus" size="small" @click="openAdd" class="add-btn" />
         </div>
 
-        <!-- STAT -->
+        <!-- STAT — selalu 3 kolom di semua ukuran layar -->
         <div class="stat-grid">
             <div class="stat-card">
-                <p class="stat-label">Total Supplier</p>
-                <p class="stat-value">{{ totalSuppliers }}</p>
+                <div class="stat-icon stat-icon--blue"><i class="pi pi-users" /></div>
+                <div>
+                    <p class="stat-label">Total Supplier</p>
+                    <p class="stat-value">{{ totalSuppliers }}</p>
+                </div>
             </div>
             <div class="stat-card">
-                <p class="stat-label">Aktif</p>
-                <p class="stat-value stat-green">{{ activeSuppliers }}</p>
+                <div class="stat-icon stat-icon--green"><i class="pi pi-check-circle" /></div>
+                <div>
+                    <p class="stat-label">Aktif</p>
+                    <p class="stat-value stat-green">{{ activeSuppliers }}</p>
+                </div>
             </div>
             <div class="stat-card">
-                <p class="stat-label">Tidak Aktif</p>
-                <p class="stat-value stat-red">{{ inactiveSuppliers }}</p>
+                <div class="stat-icon stat-icon--red"><i class="pi pi-times-circle" /></div>
+                <div>
+                    <p class="stat-label">Tidak Aktif</p>
+                    <p class="stat-value stat-red">{{ inactiveSuppliers }}</p>
+                </div>
             </div>
         </div>
 
-        <!-- DATA TABLE -->
-        <div class="main-card">
+        <!-- MOBILE LIST (≤ 640px) -->
+        <div class="mobile-list">
+            <div class="mobile-search">
+                <i class="pi pi-search" />
+                <input v-model="search" placeholder="Cari supplier..." class="mobile-search-input" />
+            </div>
+
+            <div v-if="filteredSuppliers.length === 0" class="empty-state">
+                <i class="pi pi-inbox" />
+                <span>Tidak ada data supplier ditemukan.</span>
+            </div>
+
+            <div v-for="s in filteredSuppliers" :key="s.id" class="mobile-card">
+                <div class="mobile-card__top">
+                    <div class="avatar">{{ getInitial(s.name) }}</div>
+                    <div class="mobile-card__info">
+                        <p class="supplier-name">{{ s.name }}</p>
+                        <span class="cat-badge">{{ s.category }}</span>
+                    </div>
+                    <Tag :value="s.status" :severity="getStatusSeverity(s.status)" class="mobile-tag" @click="toggleStatus(s)" style="cursor: pointer; font-size: 0.7rem" />
+                </div>
+                <div class="mobile-card__body">
+                    <div class="mobile-card__row">
+                        <i class="pi pi-phone" />
+                        <span>{{ s.contact }}</span>
+                    </div>
+                    <div class="mobile-card__row">
+                        <i class="pi pi-map-marker" />
+                        <span>{{ s.address }}</span>
+                    </div>
+                </div>
+                <div class="mobile-card__actions">
+                    <Button icon="pi pi-eye" size="small" severity="info" text @click="openDetail(s)" />
+                    <Button icon="pi pi-pencil" size="small" severity="secondary" text @click="openEdit(s)" />
+                    <Button icon="pi pi-trash" size="small" severity="danger" text @click="deleteSupplier(s.id)" />
+                </div>
+            </div>
+        </div>
+
+        <!-- DESKTOP TABLE (> 640px) -->
+        <div class="main-card desktop-table">
             <DataTable
                 :value="filteredSuppliers"
                 :paginator="true"
@@ -159,10 +210,8 @@ const getInitial = (name) => name?.charAt(0).toUpperCase() ?? '-';
                 removableSort
                 responsiveLayout="scroll"
                 paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
-                currentPageReportTemplate="{first} - {last} dari {totalRecords} supplier"
                 class="p-datatable-sm"
             >
-                <!-- HEADER TOOLBAR -->
                 <template #header>
                     <div class="table-toolbar">
                         <span class="p-input-icon-left search-wrap">
@@ -172,7 +221,6 @@ const getInitial = (name) => name?.charAt(0).toUpperCase() ?? '-';
                     </div>
                 </template>
 
-                <!-- EMPTY STATE -->
                 <template #empty>
                     <div class="empty-state">
                         <i class="pi pi-inbox" style="font-size: 2rem; display: block; margin-bottom: 0.5rem" />
@@ -180,49 +228,45 @@ const getInitial = (name) => name?.charAt(0).toUpperCase() ?? '-';
                     </div>
                 </template>
 
-                <!-- KOLOM NAMA -->
                 <Column field="name" header="Supplier" sortable style="min-width: 180px">
                     <template #body="{ data }">
                         <div class="supplier-cell">
                             <div class="avatar">{{ getInitial(data.name) }}</div>
                             <div>
                                 <p class="supplier-name">{{ data.name }}</p>
-                                <p class="supplier-sub hide-desktop">{{ data.contact }}</p>
+                                <p class="supplier-contact-sub">{{ data.contact }}</p>
                             </div>
                         </div>
                     </template>
                 </Column>
 
-                <!-- KOLOM KATEGORI -->
                 <Column field="category" header="Kategori" sortable style="min-width: 140px">
                     <template #body="{ data }">
                         <span class="cat-badge">{{ data.category }}</span>
                     </template>
                 </Column>
 
-                <!-- KOLOM KONTAK (sembunyikan di mobile) -->
-                <Column field="contact" header="Kontak" style="min-width: 140px" class="col-hide-sm">
+                <!-- Kontak: hanya muncul ≥ 900px -->
+                <Column field="contact" header="Kontak" style="min-width: 140px" class="col-lg">
                     <template #body="{ data }">
                         <span class="muted-text">{{ data.contact }}</span>
                     </template>
                 </Column>
 
-                <!-- KOLOM ALAMAT (sembunyikan di tablet) -->
-                <Column field="address" header="Alamat" style="min-width: 200px" class="col-hide-md">
+                <!-- Alamat: hanya muncul ≥ 1100px -->
+                <Column field="address" header="Alamat" style="min-width: 200px" class="col-xl">
                     <template #body="{ data }">
                         <span class="address-text">{{ data.address }}</span>
                     </template>
                 </Column>
 
-                <!-- KOLOM STATUS -->
                 <Column field="status" header="Status" sortable style="min-width: 110px; text-align: center">
                     <template #body="{ data }">
                         <Tag :value="data.status" :severity="getStatusSeverity(data.status)" style="cursor: pointer; font-size: 0.75rem" v-tooltip.top="'Klik untuk ubah status'" @click="toggleStatus(data)" />
                     </template>
                 </Column>
 
-                <!-- KOLOM AKSI -->
-                <Column header="Aksi" style="min-width: 120px; text-align: center">
+                <Column header="Aksi" style="min-width: 110px; text-align: center">
                     <template #body="{ data }">
                         <div class="action-group">
                             <Button icon="pi pi-eye" size="small" severity="info" text v-tooltip.top="'Detail'" @click="openDetail(data)" />
@@ -345,27 +389,28 @@ const getInitial = (name) => name?.charAt(0).toUpperCase() ?? '-';
 </template>
 
 <style scoped>
+/* ============================================================
+   BASE
+   ============================================================ */
 .supplier-wrap {
     padding: 1rem;
     width: 100%;
-}
-@media (min-width: 640px) {
-    .supplier-wrap {
-        padding: 1.5rem;
-    }
+    box-sizing: border-box;
 }
 
-/* HEADER */
+/* ============================================================
+   HEADER
+   ============================================================ */
 .page-header {
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
     margin-bottom: 1.25rem;
 }
 .page-title {
-    font-size: 1.2rem;
+    font-size: 1.15rem;
     font-weight: 600;
     display: flex;
     align-items: center;
@@ -373,38 +418,79 @@ const getInitial = (name) => name?.charAt(0).toUpperCase() ?? '-';
     margin: 0;
 }
 .page-sub {
-    font-size: 0.8rem;
-    color: var(--text-color-secondary);
-    margin: 0.2rem 0 0;
-}
-
-/* STAT */
-.stat-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.75rem;
-    margin-bottom: 1.25rem;
-}
-@media (max-width: 480px) {
-    .stat-grid {
-        grid-template-columns: 1fr;
-    }
-}
-.stat-card {
-    padding: 0.875rem 1rem;
-    border-radius: 0.5rem;
-    background: var(--surface-card);
-    border: 1px solid var(--surface-border);
-}
-.stat-label {
     font-size: 0.78rem;
     color: var(--text-color-secondary);
-    margin-bottom: 0.2rem;
+    margin: 0.15rem 0 0;
+}
+/* Tombol tambah tidak wrap, hanya teks yang diperpendek di xs */
+.add-btn {
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* ============================================================
+   STAT GRID — SELALU 3 KOLOM
+   Gunakan minmax kecil agar muat di layar paling sempit sekalipun
+   ============================================================ */
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* ← kunci: selalu 3 kolom */
+    gap: 0.6rem;
+    margin-bottom: 1.25rem;
+}
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.75rem 0.875rem;
+    border-radius: 0.6rem;
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    min-width: 0; /* cegah overflow */
+}
+.stat-icon {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+.stat-icon--blue {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+.stat-icon--green {
+    background: #dcfce7;
+    color: #16a34a;
+}
+.stat-icon--red {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* Di layar ≤ 360px, sembunyikan ikon agar label & nilai tetap muat */
+@media (max-width: 360px) {
+    .stat-icon {
+        display: none;
+    }
+}
+
+.stat-label {
+    font-size: 0.7rem;
+    color: var(--text-color-secondary);
+    margin: 0 0 0.1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .stat-value {
-    font-size: 1.6rem;
-    font-weight: 600;
-    line-height: 1.2;
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1.1;
+    margin: 0;
 }
 .stat-green {
     color: #16a34a;
@@ -413,21 +499,123 @@ const getInitial = (name) => name?.charAt(0).toUpperCase() ?? '-';
     color: #ef4444;
 }
 
-/* MAIN CARD */
+/* ============================================================
+   MOBILE CARD LIST  (< 641px)
+   ============================================================ */
+.mobile-list {
+    display: none;
+}
+.desktop-table {
+    display: block;
+}
+
+@media (max-width: 640px) {
+    .mobile-list {
+        display: block;
+    }
+    .desktop-table {
+        display: none !important;
+    }
+}
+
+/* Search mobile */
+.mobile-search {
+    position: relative;
+    margin-bottom: 0.75rem;
+}
+.mobile-search i {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-color-secondary);
+    font-size: 0.85rem;
+}
+.mobile-search-input {
+    width: 100%;
+    padding: 0.55rem 0.75rem 0.55rem 2.25rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--surface-border);
+    background: var(--surface-card);
+    color: var(--text-color);
+    font-size: 0.875rem;
+    box-sizing: border-box;
+    outline: none;
+}
+.mobile-search-input:focus {
+    border-color: var(--primary-color, #3b82f6);
+}
+
+/* Card */
+.mobile-card {
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: 0.625rem;
+    padding: 0.875rem;
+    margin-bottom: 0.625rem;
+}
+.mobile-card__top {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.6rem;
+}
+.mobile-card__info {
+    flex: 1;
+    min-width: 0;
+}
+.mobile-card__info .supplier-name {
+    margin: 0 0 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mobile-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin-bottom: 0.6rem;
+    padding: 0.5rem 0.625rem;
+    background: var(--surface-ground, rgba(0, 0, 0, 0.03));
+    border-radius: 0.375rem;
+}
+.mobile-card__row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.45rem;
+    font-size: 0.8rem;
+    color: var(--text-color-secondary);
+    line-height: 1.4;
+}
+.mobile-card__row i {
+    margin-top: 0.15rem;
+    flex-shrink: 0;
+    font-size: 0.75rem;
+}
+.mobile-card__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    border-top: 1px solid var(--surface-border);
+    padding-top: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+/* ============================================================
+   DESKTOP TABLE
+   ============================================================ */
 .main-card {
     border-radius: 0.75rem;
     background: var(--surface-card);
     border: 1px solid var(--surface-border);
     overflow: hidden;
 }
-
-/* TOOLBAR */
 .table-toolbar {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
+    flex-wrap: wrap;
 }
 .search-wrap {
     display: flex;
@@ -445,13 +633,29 @@ const getInitial = (name) => name?.charAt(0).toUpperCase() ?? '-';
     padding-left: 2rem;
     width: 260px;
 }
-@media (max-width: 480px) {
-    .search-input {
-        width: 100%;
+
+/* Kolom yang hanya tampil di layar lebar */
+:deep(.col-lg) {
+    display: none !important;
+}
+:deep(.col-xl) {
+    display: none !important;
+}
+
+@media (min-width: 900px) {
+    :deep(.col-lg) {
+        display: table-cell !important;
+    }
+}
+@media (min-width: 1100px) {
+    :deep(.col-xl) {
+        display: table-cell !important;
     }
 }
 
-/* SUPPLIER CELL */
+/* ============================================================
+   SHARED CELLS
+   ============================================================ */
 .supplier-cell {
     display: flex;
     align-items: center;
@@ -480,19 +684,15 @@ const getInitial = (name) => name?.charAt(0).toUpperCase() ?? '-';
     font-size: 0.9rem;
     margin: 0 0 0.1rem;
 }
-.supplier-sub {
-    font-size: 0.75rem;
+/* Nomor kontak kecil di bawah nama, muncul saat kolom Kontak tidak ada */
+.supplier-contact-sub {
+    font-size: 0.72rem;
     color: var(--text-color-secondary);
     margin: 0;
 }
-
-/* hanya muncul saat kolom kontak disembunyikan */
-.hide-desktop {
-    display: none;
-}
-@media (max-width: 640px) {
-    .hide-desktop {
-        display: block;
+@media (min-width: 900px) {
+    .supplier-contact-sub {
+        display: none;
     }
 }
 
@@ -505,6 +705,7 @@ const getInitial = (name) => name?.charAt(0).toUpperCase() ?? '-';
     font-size: 0.72rem;
     font-weight: 500;
     white-space: nowrap;
+    display: inline-block;
 }
 .muted-text {
     font-size: 0.85rem;
@@ -519,14 +720,15 @@ const getInitial = (name) => name?.charAt(0).toUpperCase() ?? '-';
     text-overflow: ellipsis;
     white-space: nowrap;
 }
-
 .action-group {
     display: flex;
     justify-content: center;
     gap: 0.2rem;
 }
 
-/* DETAIL MODAL */
+/* ============================================================
+   DETAIL MODAL
+   ============================================================ */
 .detail-body {
     padding-top: 0.5rem;
 }
@@ -561,7 +763,9 @@ const getInitial = (name) => name?.charAt(0).toUpperCase() ?? '-';
     flex-shrink: 0;
 }
 
-/* MODAL FORM */
+/* ============================================================
+   MODAL FORM
+   ============================================================ */
 .modal-form {
     display: flex;
     flex-direction: column;
@@ -590,24 +794,9 @@ const getInitial = (name) => name?.charAt(0).toUpperCase() ?? '-';
     gap: 0.5rem;
 }
 
-/* HIDE KOLOM DI DATATABLE */
-:deep(.col-hide-sm) {
-    display: none !important;
-}
-@media (min-width: 640px) {
-    :deep(.col-hide-sm) {
-        display: table-cell !important;
-    }
-}
-:deep(.col-hide-md) {
-    display: none !important;
-}
-@media (min-width: 900px) {
-    :deep(.col-hide-md) {
-        display: table-cell !important;
-    }
-}
-
+/* ============================================================
+   MISC
+   ============================================================ */
 .w-full {
     width: 100%;
 }
@@ -615,5 +804,12 @@ const getInitial = (name) => name?.charAt(0).toUpperCase() ?? '-';
     text-align: center;
     padding: 2.5rem 1rem;
     color: var(--text-color-secondary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+.empty-state i {
+    font-size: 2rem;
 }
 </style>

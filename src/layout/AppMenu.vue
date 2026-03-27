@@ -69,11 +69,6 @@ const model = ref([
                 badgeClass: 'p-badge-danger'
             },
             {
-                label: 'Stok',
-                icon: 'pi pi-fw pi-chart-line',
-                to: '/stok'
-            },
-            {
                 label: 'Supplier',
                 icon: 'pi pi-fw pi-truck',
                 to: '/supplier'
